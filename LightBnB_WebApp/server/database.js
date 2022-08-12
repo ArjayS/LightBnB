@@ -16,8 +16,9 @@ const pool = new Pool({
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
+
+// getUserWithEmail
 const getUserWithEmail = function (email) {
-  //////////////////////////////////////////////////////////////////////// getUserWithEmail
   return pool
     .query(`SELECT * FROM users WHERE email = $1`, [email])
     .then((result) => {
@@ -38,8 +39,9 @@ exports.getUserWithEmail = getUserWithEmail;
  * @param {string} id The id of the user.
  * @return {Promise<{}>} A promise to the user.
  */
+
+// getUserWithId
 const getUserWithId = function (id) {
-  /////////////////////////////////////////////////////////////////////////// getUserWithId
   return pool
     .query(`SELECT * FROM users WHERE id = $1`, [id])
     .then((result) => {
@@ -60,8 +62,9 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
+
+// addUser
 const addUser = function (user) {
-  ///////////////////////////////////////////////////////////////////////////////// addUser
   return pool
     .query(
       `INSERT INTO users(name, email, password) VALUES ($1, $2, $3) RETURNING *;`,
@@ -87,13 +90,15 @@ exports.addUser = addUser;
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
+
+// getAllReservations
 const getAllReservations = function (guest_id, limit = 10) {
-  ////////////////////////////////////////////////////////////////////// getAllReservations
   return pool
     .query(
-      `SELECT reservations.*, properties.*
+      `SELECT reservations.*, properties.*, AVG(property_reviews.rating) as average_rating
       FROM reservations
       JOIN properties ON properties.id = reservations.property_id
+      JOIN property_reviews ON properties.id = property_reviews.property_id
       WHERE reservations.guest_id = $1
       GROUP BY properties.id, reservations.id
       ORDER BY reservations.start_date
@@ -123,6 +128,7 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 
+// getAllReservations
 const getAllProperties = function (options, limit = 10) {
   // 1
   const queryParams = [];
@@ -186,6 +192,8 @@ exports.getAllProperties = getAllProperties;
  * @param {{}} property An object containing all of the property details.
  * @return {Promise<{}>} A promise to the property.
  */
+
+// addProperty
 const addProperty = function (property) {
   const queryString = `INSERT INTO properties (
     owner_id,
