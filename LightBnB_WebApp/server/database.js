@@ -27,8 +27,8 @@ const getUserWithEmail = function (email) {
         return null;
       }
     })
-    .catch((err) => {
-      console.log(err.message);
+    .catch((error) => {
+      console.log(error.message);
     });
 };
 exports.getUserWithEmail = getUserWithEmail;
@@ -49,8 +49,8 @@ const getUserWithId = function (id) {
         return null;
       }
     })
-    .catch((err) => {
-      console.log(err.message);
+    .catch((error) => {
+      console.log(error.message);
     });
 };
 exports.getUserWithId = getUserWithId;
@@ -74,8 +74,8 @@ const addUser = function (user) {
         return null;
       }
     })
-    .catch((err) => {
-      console.log(err.message);
+    .catch((error) => {
+      console.log(error.message);
     });
 };
 exports.addUser = addUser;
@@ -108,8 +108,8 @@ const getAllReservations = function (guest_id, limit = 10) {
         return null;
       }
     })
-    .catch((err) => {
-      console.log(err.message);
+    .catch((error) => {
+      console.log(error.message);
     });
 };
 exports.getAllReservations = getAllReservations;
@@ -126,9 +126,7 @@ exports.getAllReservations = getAllReservations;
 const getAllProperties = function (options, limit = 10) {
   // 1
   const queryParams = [];
-  const base = 1000000;
   // 2
-  let counter = 0;
   let queryString = `
   SELECT properties.*, AVG(property_reviews.rating) as average_rating
   FROM properties
@@ -137,35 +135,29 @@ const getAllProperties = function (options, limit = 10) {
 
   // 3
   if (options.city) {
-    // counter++;
-    console.log(counter);
     queryParams.push(`%${options.city}%`);
     queryString += ` AND city LIKE $${queryParams.length} `;
   }
+
   if (options.owner_id) {
-    // counter++;
-    console.log(counter);
     queryParams.push(options.owner_id);
     queryString += ` AND owner_id = $${queryParams.length} `;
-    // if (counter > 1) {
-    //   queryString += `AND owner_id = $${queryParams.length} `;
-    // }
   }
+
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
-    // counter += 2;
     let min = parseInt(options.minimum_price_per_night);
     let max = parseInt(options.maximum_price_per_night);
     queryParams.push(min, max);
     queryString += ` AND cost_per_night >= $${
       queryParams.length - 1
-    } AND cost_per_night <= $${queryParams.length}`;
+    } AND cost_per_night <= $${queryParams.length} `;
   }
 
   // 4
   if (options.minimum_rating) {
-    rating = parseInt(options.minimum_rating);
+    const rating = parseInt(options.minimum_rating);
     queryParams.push(rating);
-    queryString += ` AND rating >= $${queryParams.length}`;
+    queryString += ` AND rating >= $${queryParams.length} `;
   }
 
   queryParams.push(limit);
@@ -179,19 +171,14 @@ const getAllProperties = function (options, limit = 10) {
   console.log(queryString, queryParams);
 
   // 6
-  return pool.query(queryString, queryParams).then((res) => res.rows);
+  return pool
+    .query(queryString, queryParams)
+    .then((result) => result.rows)
+    .catch((error) => {
+      console.log(error.message);
+    });
 };
 
-// const getAllProperties = (options, limit = 10) => {
-//   return pool
-//     .query(`SELECT * FROM properties LIMIT $1`, [limit])
-//     .then((result) => {
-//       return result.rows;
-//     })
-//     .catch((err) => {
-//       console.log(err.message);
-//     });
-// };
 exports.getAllProperties = getAllProperties;
 
 /**
@@ -200,9 +187,44 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  const queryString = `INSERT INTO properties (
+    owner_id,
+    title,
+    thumbnail_photo_url,
+    cover_photo_url,
+    cost_per_night,
+    parking_spaces,
+    number_of_bathrooms,
+    number_of_bedrooms,
+    description,
+    country,
+    street,
+    city,
+    province,
+    post_code
+  ) VALUES ($1, $2, $3, $4, $5, $6 ,$7, $8, $9, $10, $11, $12, $13, $14) RETURNING *;`;
+
+  const values = [
+    property.owner_id,
+    property.title,
+    property.thumbnail_photo_url,
+    property.cover_photo_url,
+    property.cost_per_night,
+    property.parking_spaces,
+    property.number_of_bathrooms,
+    property.number_of_bedrooms,
+    property.description,
+    property.country,
+    property.street,
+    property.city,
+    property.province,
+    property.post_code,
+  ];
+  return pool
+    .query(queryString, values)
+    .then((result) => result.rows[0])
+    .catch((error) => {
+      console.log(error.message);
+    });
 };
 exports.addProperty = addProperty;
